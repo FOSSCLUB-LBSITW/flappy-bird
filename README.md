@@ -19,14 +19,9 @@ A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Con
 1. Clone the repository:  
    ```bash  
    git clone https://github.com/FOSSCLUB-LBSITW/flappy-bird.git  
-   ```  
+   ```    
 
-2. Navigate to the project directory:  
-   ```bash  
-   cd flappy-bird  
-   ```  
-
-3. Open the `index.html` file in your browser to start playing the game.  
+2. Open the `index.html` file in your browser to start playing the game.  
 
 ### Gameplay Instructions  
 - **Start the Game**: Press the "Play" button.  
