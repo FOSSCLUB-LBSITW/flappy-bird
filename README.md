@@ -1,8 +1,8 @@
 ![Banner](https://github.com/user-attachments/assets/f656cd04-5306-49f9-9384-655e8d0b626c)
 Exclusive for LBTIANS !
 
-# HACK THE STACK
-## Hack it,Fix it,Build it !!!
+** HACK THE STACK **
+_Hack it,Fix it,Build it !!!_
 ## Contributed by  Uttara Praveen,IT Department LBSITW
 # Flappy Bird Game  
 
