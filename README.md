@@ -1,6 +1,6 @@
 ![Banner](https://github.com/user-attachments/assets/f656cd04-5306-49f9-9384-655e8d0b626c)
-Exclusive for LBTIANS !
 
+**_ This text is Exclusive for LBTIANS ! _**
 ** HACK THE STACK **
 _Hack it,Fix it,Build it !!!_
 ## Contributed by  Uttara Praveen,IT Department LBSITW
