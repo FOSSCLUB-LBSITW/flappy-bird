@@ -2,7 +2,8 @@
 Exclusive for LBTIANS !
 
 # HACK THE STACK
-## Contributed by Uttara Praveen IT Department LBSITW
+## Hack it,Fix it,Build it !!!
+## Contributed by  Uttara Praveen,IT Department LBSITW
 # Flappy Bird Game  
 
 A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Control the bird to navigate through obstacles and achieve the highest score!  
