@@ -34,4 +34,4 @@ A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Con
 - **Scoring**: Gain points by successfully passing through pipes.  
 - **Game Over**: Collide with a pipe or the ground to end the game. Press "Restart" to try again.  
  
-Let me know if you'd like to add more details or make further adjustments! 😊
+Happy Learning !!!
