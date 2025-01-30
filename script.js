@@ -14,10 +14,11 @@ const PIPE_GAP = 150;
 const PIPE_SPEED = 2;
 
 // Game variables
-let bird = { x: 50, y: 300, width: 30, height: 30, velocity: 0, color: "red" };
+let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
 let pipes = [];
 let score = 0;
 let isGameOver = false;
+bird.image.src = "bird.png";  
 
 // Create initial pipes
 function createPipe() {
@@ -27,8 +28,7 @@ function createPipe() {
 
 // Draw the bird
 function drawBird() {
-  ctx.fillStyle = bird.color;
-  ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+  ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
 }
 
 // Draw the pipes
@@ -111,11 +111,15 @@ function gameLoop() {
 
 // Reset the game
 function resetGame() {
-  bird = { x: 50, y: 300, width: 30, height: 30, velocity: 0, color: "red" };
+  bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
+  bird.image.src = "bird.png";  // Ensure the bird image is reset
   pipes = [];
   score = 0;
   isGameOver = false;
-  canvas.style.display = "block";
+  canvas.style.display = "block";  // Ensure canvas is shown
+  replayButton.style.display = "none";  // Hide replay button
+  playButton.style.display = "none"; // Hide play button
+  instructions.style.display = "none"; // Hide instructions
   createPipe();
   gameLoop();
 }
@@ -133,7 +137,7 @@ function startCountdown() {
     } else {
       clearInterval(countdownInterval);
       countdownDisplay.style.display = "none";
-      canvas.style.display = "block";
+      canvas.style.display = "block"; // Show canvas when countdown ends
       gameLoop();
     }
   }, 1000);
@@ -141,7 +145,7 @@ function startCountdown() {
 
 // Show replay button after game over
 function showReplayOption() {
-  replayButton.style.display = "block";
+  replayButton.style.display = "block";  // Show replay button
 }
 
 // Start the game when Play button is clicked
