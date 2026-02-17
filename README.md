@@ -1,11 +1,10 @@
 ![Banner](https://github.com/user-attachments/assets/f656cd04-5306-49f9-9384-655e8d0b626c)
 
-**_This is Exclusive for LBTIANS !_**
+
 ## Contributed by  Uttara Praveen,IT Department LBSITW
 # Flappy Bird Game  
 
-A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Control the bird to navigate through obstacles and achieve the highest score!  
-wsghtejhe
+A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Control the bird to navigate through obstacles and achieve the highest score!
 ## Features  
 - **Responsive Gameplay**: Works seamlessly on any screen size.  
 - **Interactive Controls**: Tap or press the spacebar to make the bird flap its wings.  
