@@ -19,6 +19,7 @@ A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Con
 - **CSS**: Adds styling for the game interface.  
 - **JavaScript**: Implements the game logic, including physics and controls.  
 
+fsgedthr
 ## How to Play  
 1. Clone the repository:  
    ```bash  
