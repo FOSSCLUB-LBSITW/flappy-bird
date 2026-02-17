@@ -5,7 +5,7 @@
 # Flappy Bird Game  
 
 A fun and interactive Flappy Bird game built with HTML, CSS, and JavaScript. Control the bird to navigate through obstacles and achieve the highest score!  
-
+wsghtejhe
 ## Features  
 - **Responsive Gameplay**: Works seamlessly on any screen size.  
 - **Interactive Controls**: Tap or press the spacebar to make the bird flap its wings.  
