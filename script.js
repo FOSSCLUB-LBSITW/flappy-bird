@@ -2,6 +2,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const playButton = document.getElementById("playButton");
 const replayButton = document.getElementById("replayButton");
+const pauseButton = document.getElementById("pauseButton");
 const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
@@ -18,25 +19,15 @@ let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image
 let pipes = [];
 let score = 0;
 let isGameOver = false;
-bird.image.src = "bird.png";  
+let isPaused = false;
+let animationId = null;
 
+bird.image.src = "bird.png";  
 
 const MIN_PIPE_HEIGHT = 50; 
 const MAX_PIPE_HEIGHT = canvas.height - PIPE_GAP - 100; 
 
-function createPipe() {
-  
-  const topPipeHeight = Math.random() * (MAX_PIPE_HEIGHT - MIN_PIPE_HEIGHT) + MIN_PIPE_HEIGHT;
-
-  
-  const bottomPipeY = topPipeHeight + PIPE_GAP;
-
-  
-  pipes.push({ x: canvas.width, y: topPipeHeight, bottomY: bottomPipeY });
-}
-
-
-// Create initial pipes
+// Create new pipe
 function createPipe() {
   const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
   pipes.push({ x: canvas.width, y: gapY });
@@ -47,20 +38,18 @@ function drawBird() {
   ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
 }
 
-// Draw the pipes
+// Draw pipes
 function drawPipes() {
   ctx.fillStyle = "green";
   pipes.forEach(pipe => {
-    // Top pipe
-    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
-    // Bottom pipe
-    ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
+    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP); // top pipe
+    ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y); // bottom pipe
   });
 }
 
-// Update the game state
+// Update game state
 function update() {
-  if (isGameOver) return;
+  if (isGameOver || isPaused) return;
 
   // Bird mechanics
   bird.velocity += GRAVITY;
@@ -69,7 +58,7 @@ function update() {
   // Move pipes
   pipes.forEach(pipe => (pipe.x -= PIPE_SPEED));
 
-  // Remove pipes that are off-screen
+  // Remove off-screen pipes and increase score
   if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
     score++;
@@ -87,26 +76,23 @@ function update() {
       bird.x + bird.width > pipe.x &&
       (bird.y < pipe.y - PIPE_GAP || bird.y + bird.height > pipe.y)
     ) {
-      bird.color = "gray";  // Change color on collision
+      bird.color = "gray";
       isGameOver = true;
     }
   });
 
-  // Check if bird hits the ground or goes out of bounds
+  // Check bounds
   if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
-    bird.color = "gray";  // Change color on collision with ground
+    bird.color = "gray";
     isGameOver = true;
   }
 }
 
-// Draw the game frame
+// Draw game frame
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   drawBird();
   drawPipes();
-
-  // Display score
   scoreDisplay.innerText = `Score: ${score}`;
 }
 
@@ -116,31 +102,38 @@ function gameLoop() {
   draw();
 
   if (!isGameOver) {
-    requestAnimationFrame(gameLoop);
+    animationId = requestAnimationFrame(gameLoop);
   } else {
     setTimeout(() => {
       alert("Game Over! Your score: " + score);
       showReplayOption();
+      pauseButton.style.display = "none"; // hide pause button
     }, 500);
   }
 }
 
-// Reset the game
+// Reset game
 function resetGame() {
   bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
-  bird.image.src = "bird.png";  // Ensure the bird image is reset
+  bird.image.src = "bird.png";
   pipes = [];
   score = 0;
   isGameOver = false;
-  canvas.style.display = "block";  // Ensure canvas is shown
-  replayButton.style.display = "none";  // Hide replay button
-  playButton.style.display = "none"; // Hide play button
-  instructions.style.display = "none"; // Hide instructions
+  isPaused = false;
+  canvas.style.display = "block";
+  replayButton.style.display = "none";
+  playButton.style.display = "none";
+  instructions.style.display = "none";
+
+  // ✅ Show pause button when a new game starts
+  pauseButton.style.display = "inline-block"; 
+  pauseButton.innerText = "PAUSE"; // reset button text
+
   createPipe();
   gameLoop();
 }
 
-// Countdown before starting the game
+// Countdown before starting
 function startCountdown() {
   let countdown = 3;
   countdownDisplay.style.display = "block";
@@ -153,33 +146,45 @@ function startCountdown() {
     } else {
       clearInterval(countdownInterval);
       countdownDisplay.style.display = "none";
-      canvas.style.display = "block"; // Show canvas when countdown ends
+      canvas.style.display = "block";
+      pauseButton.style.display = "inline-block"; // show pause button
       gameLoop();
     }
   }, 1000);
 }
 
-// Show replay button after game over
+// Show replay button
 function showReplayOption() {
-  replayButton.style.display = "block";  // Show replay button
+  replayButton.style.display = "block";
 }
 
-// Start the game when Play button is clicked
+// Handle Play button
 playButton.addEventListener("click", () => {
-  playButton.style.display = "none"; // Hide play button
-  instructions.style.display = "none"; // Hide instructions
-  startCountdown(); // Start countdown
+  playButton.style.display = "none";
+  instructions.style.display = "none";
+  startCountdown();
 });
 
-// Start the game when Replay button is clicked
+// Handle Replay button
 replayButton.addEventListener("click", () => {
-  replayButton.style.display = "none"; // Hide replay button
-  resetGame(); // Reset and start the game
+  replayButton.style.display = "none";
+  resetGame();
 });
 
-// Handle user input
+// Handle Pause/Resume button
+pauseButton.addEventListener("click", () => {
+  if (!isPaused) {
+    isPaused = true;
+    pauseButton.innerText = "RESUME";
+  } else {
+    isPaused = false;
+    pauseButton.innerText = "PAUSE";
+  }
+});
+
+// Handle spacebar input
 window.addEventListener("keydown", event => {
-  if (event.code === "Space" && !isGameOver) {
+  if (event.code === "Space" && !isGameOver && !isPaused) {
     bird.velocity = FLAP;
   }
 });
