@@ -1,20 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Flappy Bird</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <h1>Flappy Bird</h1>
   <p id="instructions">Press Spacebar to Make the Bird Flap! Avoid the Pipes!</p>
-  <canvas id="gameCanvas" width="400" height="600" style="display: none;"></canvas>
+
+  <canvas id="gameCanvas" width="400" height="600" style="display:none;"></canvas>
+
   <p id="score">Score: 0</p>
+
+  <!-- 🏆 Leaderboard -->
+  <div id="leaderboard">
+    <h2>🏆 Leaderboard</h2>
+    <ol id="leaderboardList"></ol>
+  </div>
+
   <button id="playButton">START NOW</button>
-  <button id="pauseButton" style="display: none;">PAUSE</button>
-  <p id="countdown" style="display: none;">3</p>
-  <button id="replayButton" style="display: none;">Replay?</button>
+  <button id="pauseButton" style="display:none;">PAUSE</button>
+  <p id="countdown" style="display:none;">3</p>
+  <button id="replayButton" style="display:none;">Replay?</button>
+
   <script src="script.js"></script>
 </body>
 </html>

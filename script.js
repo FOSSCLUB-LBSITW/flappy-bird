@@ -1,190 +1,148 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
 const playButton = document.getElementById("playButton");
 const replayButton = document.getElementById("replayButton");
 const pauseButton = document.getElementById("pauseButton");
-const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
+const leaderboardList = document.getElementById("leaderboardList");
 
-// Game constants
 const GRAVITY = 0.5;
 const FLAP = -10;
 const PIPE_WIDTH = 50;
 const PIPE_GAP = 200;
 const PIPE_SPEED = 2;
 
-// Game variables
-let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
-let pipes = [];
-let score = 0;
-let isGameOver = false;
-let isPaused = false;
-let animationId = null;
+const LEADERBOARD_KEY = "flappyLeaderboard";
+let leaderboard = JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
 
-bird.image.src = "bird.png";  
+let bird, pipes, score, isGameOver, isPaused;
 
-const MIN_PIPE_HEIGHT = 50; 
-const MAX_PIPE_HEIGHT = canvas.height - PIPE_GAP - 100; 
+// ---------------- LEADERBOARD ----------------
 
-// Create new pipe
+function saveScore(newScore) {
+  leaderboard.push(newScore);
+  leaderboard.sort((a, b) => b - a);
+  leaderboard = leaderboard.slice(0, 5);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  leaderboardList.innerHTML = "";
+  leaderboard.forEach(score => {
+    const li = document.createElement("li");
+    li.textContent = score;
+    leaderboardList.appendChild(li);
+  });
+}
+
+renderLeaderboard();
+
+// ---------------- GAME LOGIC ----------------
+
+function resetGame() {
+  bird = { x: 50, y: 300, width: 40, height: 40, velocity: 0, image: new Image() };
+  bird.image.src = "bird.png";
+  pipes = [];
+  score = 0;
+  isGameOver = false;
+  isPaused = false;
+
+  scoreDisplay.textContent = "Score: 0";
+  canvas.style.display = "block";
+  replayButton.style.display = "none";
+  pauseButton.style.display = "inline-block";
+  pauseButton.textContent = "PAUSE";
+
+  createPipe();
+  gameLoop();
+}
+
 function createPipe() {
   const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
   pipes.push({ x: canvas.width, y: gapY });
 }
 
-// Draw the bird
-function drawBird() {
-  ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
-}
-
-// Draw pipes
-function drawPipes() {
-  ctx.fillStyle = "green";
-  pipes.forEach(pipe => {
-    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP); // top pipe
-    ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y); // bottom pipe
-  });
-}
-
-// Update game state
 function update() {
   if (isGameOver || isPaused) return;
 
-  // Bird mechanics
   bird.velocity += GRAVITY;
   bird.y += bird.velocity;
 
-  // Move pipes
-  pipes.forEach(pipe => (pipe.x -= PIPE_SPEED));
+  pipes.forEach(pipe => pipe.x -= PIPE_SPEED);
 
-  // Remove off-screen pipes and increase score
-  if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
+  if (pipes.length && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
     score++;
   }
 
-  // Add new pipes
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+  if (!pipes.length || pipes[pipes.length - 1].x < canvas.width - 200) {
     createPipe();
   }
 
-  // Collision detection
   pipes.forEach(pipe => {
     if (
       bird.x < pipe.x + PIPE_WIDTH &&
       bird.x + bird.width > pipe.x &&
       (bird.y < pipe.y - PIPE_GAP || bird.y + bird.height > pipe.y)
     ) {
-      bird.color = "gray";
       isGameOver = true;
     }
   });
 
-  // Check bounds
-  if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
-    bird.color = "gray";
+  if (bird.y <= 0 || bird.y + bird.height >= canvas.height) {
     isGameOver = true;
   }
 }
 
-// Draw game frame
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBird();
-  drawPipes();
-  scoreDisplay.innerText = `Score: ${score}`;
+  ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
+
+  ctx.fillStyle = "green";
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
+    ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
+  });
+
+  scoreDisplay.textContent = `Score: ${score}`;
 }
 
-// Game loop
 function gameLoop() {
   update();
   draw();
 
   if (!isGameOver) {
-    animationId = requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
   } else {
+    saveScore(score);
     setTimeout(() => {
       alert("Game Over! Your score: " + score);
-      showReplayOption();
-      pauseButton.style.display = "none"; // hide pause button
-    }, 500);
+      replayButton.style.display = "block";
+      pauseButton.style.display = "none";
+    }, 300);
   }
 }
 
-// Reset game
-function resetGame() {
-  bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
-  bird.image.src = "bird.png";
-  pipes = [];
-  score = 0;
-  isGameOver = false;
-  isPaused = false;
-  canvas.style.display = "block";
-  replayButton.style.display = "none";
-  playButton.style.display = "none";
-  instructions.style.display = "none";
+// ---------------- EVENTS ----------------
 
-  // ✅ Show pause button when a new game starts
-  pauseButton.style.display = "inline-block"; 
-  pauseButton.innerText = "PAUSE"; // reset button text
-
-  createPipe();
-  gameLoop();
-}
-
-// Countdown before starting
-function startCountdown() {
-  let countdown = 3;
-  countdownDisplay.style.display = "block";
-  countdownDisplay.innerText = countdown;
-
-  const countdownInterval = setInterval(() => {
-    countdown--;
-    if (countdown > 0) {
-      countdownDisplay.innerText = countdown;
-    } else {
-      clearInterval(countdownInterval);
-      countdownDisplay.style.display = "none";
-      canvas.style.display = "block";
-      pauseButton.style.display = "inline-block"; // show pause button
-      gameLoop();
-    }
-  }, 1000);
-}
-
-// Show replay button
-function showReplayOption() {
-  replayButton.style.display = "block";
-}
-
-// Handle Play button
 playButton.addEventListener("click", () => {
   playButton.style.display = "none";
   instructions.style.display = "none";
-  startCountdown();
-});
-
-// Handle Replay button
-replayButton.addEventListener("click", () => {
-  replayButton.style.display = "none";
   resetGame();
 });
 
-// Handle Pause/Resume button
+replayButton.addEventListener("click", resetGame);
+
 pauseButton.addEventListener("click", () => {
-  if (!isPaused) {
-    isPaused = true;
-    pauseButton.innerText = "RESUME";
-  } else {
-    isPaused = false;
-    pauseButton.innerText = "PAUSE";
-  }
+  isPaused = !isPaused;
+  pauseButton.textContent = isPaused ? "RESUME" : "PAUSE";
 });
 
-// Handle spacebar input
-window.addEventListener("keydown", event => {
-  if (event.code === "Space" && !isGameOver && !isPaused) {
+window.addEventListener("keydown", e => {
+  if (e.code === "Space" && !isPaused && !isGameOver) {
     bird.velocity = FLAP;
   }
 });
