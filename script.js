@@ -6,6 +6,8 @@ const pauseButton = document.getElementById("pauseButton");
 const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
+// Added best score element
+const bestScoreDisplay = document.getElementById("bestScore");
 
 // Game constants
 const GRAVITY = 0.5;
@@ -21,6 +23,10 @@ let score = 0;
 let isGameOver = false;
 let isPaused = false;
 let animationId = null;
+
+// Load persistent best score
+let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
+bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
 bird.image.src = "bird.png";  
 
@@ -94,6 +100,7 @@ function draw() {
   drawBird();
   drawPipes();
   scoreDisplay.innerText = `Score: ${score}`;
+  bestScoreDisplay.innerText = `Best: ${bestScore}`;
 }
 
 // Game loop
@@ -104,16 +111,22 @@ function gameLoop() {
   if (!isGameOver) {
     animationId = requestAnimationFrame(gameLoop);
   } else {
+    // Persist best score if beaten, then show results
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
+      bestScoreDisplay.innerText = `Best: ${bestScore}`;
+    }
     setTimeout(() => {
-      alert("Game Over! Your score: " + score);
+      alert("Game Over! Your score: " + score + "\nBest: " + bestScore);
       showReplayOption();
       pauseButton.style.display = "none"; // hide pause button
     }, 500);
   }
 }
 
-// Reset game
-function resetGame() {
+// Prepare game state without starting loop (used for countdown)
+function prepareGame() {
   bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
   bird.image.src = "bird.png";
   pipes = [];
@@ -125,16 +138,27 @@ function resetGame() {
   playButton.style.display = "none";
   instructions.style.display = "none";
 
-  // ✅ Show pause button when a new game starts
+  // Show pause button when preparing a new game
   pauseButton.style.display = "inline-block"; 
   pauseButton.innerText = "PAUSE"; // reset button text
 
+  scoreDisplay.innerText = `Score: ${score}`;
+  bestScoreDisplay.innerText = `Best: ${bestScore}`;
+
   createPipe();
+}
+
+// Reset game (immediate start, used by Replay)
+function resetGame() {
+  prepareGame();
   gameLoop();
 }
 
 // Countdown before starting
 function startCountdown() {
+  // Prepare game but do not start the loop until countdown finishes
+  prepareGame();
+
   let countdown = 3;
   countdownDisplay.style.display = "block";
   countdownDisplay.innerText = countdown;
@@ -188,3 +212,27 @@ window.addEventListener("keydown", event => {
     bird.velocity = FLAP;
   }
 });
+
+// --- Added: universal input support (mouse & touch) ---
+function flap() {
+  if (!isGameOver && !isPaused) {
+    bird.velocity = FLAP;
+  }
+}
+
+// Mouse: allow click / mousedown anywhere to flap
+window.addEventListener("mousedown", event => {
+  // ignore clicks on UI controls (buttons)
+  if (event.target.tagName !== "BUTTON") {
+    flap();
+  }
+});
+
+// Touch: allow tap anywhere to flap (prevent default to avoid scrolling)
+window.addEventListener("touchstart", event => {
+  // ignore taps on UI controls (buttons)
+  if (event.target.tagName !== "BUTTON") {
+    event.preventDefault();
+    flap();
+  }
+}, { passive: false });
