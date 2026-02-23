@@ -53,3 +53,9 @@ body {
     margin-top: 20px;
   }
   
+  /* Best score styling */
+#bestScore {
+  font-size: 18px;
+  color: #fff;
+  margin-top: 6px;
+}
