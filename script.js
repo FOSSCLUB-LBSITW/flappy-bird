@@ -13,11 +13,16 @@ const finalBestScore = document.getElementById("finalBestScore");
 const gameOverReplay = document.getElementById("gameOverReplay");
 
 // Game constants
-const GRAVITY = 0.5;
-const FLAP = -10;
+const BASE_GRAVITY = 0.25;
+let GRAVITY = BASE_GRAVITY;
+const FLAP = -5.5;
+const MAX_FALL_SPEED = 7;
 const PIPE_WIDTH = 50;
 const PIPE_GAP = 200;
-const PIPE_SPEED = 2;
+const MIN_PIPE_DISTANCE = 300;
+let currentPipeSpeed = 2;
+const GRACE_PERIOD_MS = 2000;
+const HITBOX_PADDING = 6;
 
 // Game variables
 let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
@@ -26,6 +31,7 @@ let score = 0;
 let isGameOver = false;
 let isPaused = false;
 let animationId = null;
+let gameStartTime = 0;
 
 // Load best score
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
@@ -41,7 +47,15 @@ function createPipe() {
 
 // Draw bird
 function drawBird() {
-  ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
+  ctx.save();
+  ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+  
+  // Rotate based on velocity (max 90 deg down, 20 deg up)
+  const rotation = Math.min(Math.PI / 2, Math.max(-Math.PI / 9, (bird.velocity * 0.1)));
+  ctx.rotate(rotation);
+  
+  ctx.drawImage(bird.image, -bird.width / 2, -bird.height / 2, bird.width, bird.height);
+  ctx.restore();
 }
 
 // Draw pipes
@@ -57,25 +71,47 @@ function drawPipes() {
 function update() {
   if (isGameOver || isPaused) return;
 
+  // Apply grace period gravity reduction
+  if (Date.now() - gameStartTime < GRACE_PERIOD_MS) {
+    GRAVITY = BASE_GRAVITY * 0.5;
+  } else {
+    GRAVITY = BASE_GRAVITY;
+  }
+
   bird.velocity += GRAVITY;
+  
+  // Terminal velocity
+  if (bird.velocity > MAX_FALL_SPEED) {
+    bird.velocity = MAX_FALL_SPEED;
+  }
+  
   bird.y += bird.velocity;
 
-  pipes.forEach(pipe => pipe.x -= PIPE_SPEED);
+  // Move pipes and scale speed with score
+  currentPipeSpeed = 2 + Math.floor(score / 10) * 0.2;
+  pipes.forEach(pipe => pipe.x -= currentPipeSpeed);
 
   if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
     score++;
   }
 
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+  // Create pipe with better spacing
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE) {
     createPipe();
   }
 
   pipes.forEach(pipe => {
+    // Hitbox with padding for better "feel"
+    const bx = bird.x + HITBOX_PADDING;
+    const by = bird.y + HITBOX_PADDING;
+    const bw = bird.width - HITBOX_PADDING * 2;
+    const bh = bird.height - HITBOX_PADDING * 2;
+
     if (
-      bird.x < pipe.x + PIPE_WIDTH &&
-      bird.x + bird.width > pipe.x &&
-      (bird.y < pipe.y - PIPE_GAP || bird.y + bird.height > pipe.y)
+      bx < pipe.x + PIPE_WIDTH &&
+      bx + bw > pipe.x &&
+      (by < pipe.y - PIPE_GAP || by + bh > pipe.y)
     ) {
       isGameOver = true;
     }
@@ -169,6 +205,7 @@ function startCountdown() {
     } else {
       clearInterval(countdownInterval);
       countdownDisplay.style.display = "none";
+      gameStartTime = Date.now();
       gameLoop();
     }
   }, 1000);
@@ -207,7 +244,7 @@ window.addEventListener("keydown", event => {
 
   // Space to flap
   if (event.code === "Space" && !isGameOver && !isPaused) {
-    bird.velocity = FLAP;
+    bird.velocity = FLAP; // Predictable static impulse
   }
 
   // P to pause/resume
