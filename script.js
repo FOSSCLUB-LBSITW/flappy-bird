@@ -120,12 +120,10 @@ function gameLoop() {
       localStorage.setItem("bestScore", bestScore);
       bestScoreDisplay.innerText = `Best: ${bestScore}`;
     }
-
     setTimeout(() => {
-      alert("Game Over! Your score: " + score + "\nBest: " + bestScore);
-      showReplayOption();
-      pauseButton.style.display = "none";
-    }, 500);
+  showGameOverScreen();
+  pauseButton.style.display = "none";
+}, 300);
   }
 }
 
