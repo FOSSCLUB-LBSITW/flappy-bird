@@ -7,6 +7,10 @@ const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
 const bestScoreDisplay = document.getElementById("bestScore");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const finalScore = document.getElementById("finalScore");
+const finalBestScore = document.getElementById("finalBestScore");
+const gameOverReplay = document.getElementById("gameOverReplay");
 
 // Game constants
 const GRAVITY = 0.5;
@@ -116,12 +120,10 @@ function gameLoop() {
       localStorage.setItem("bestScore", bestScore);
       bestScoreDisplay.innerText = `Best: ${bestScore}`;
     }
-
     setTimeout(() => {
-      alert("Game Over! Your score: " + score + "\nBest: " + bestScore);
-      showReplayOption();
-      pauseButton.style.display = "none";
-    }, 500);
+  showGameOverScreen();
+  pauseButton.style.display = "none";
+}, 300);
   }
 }
 
@@ -144,7 +146,7 @@ function prepareGame() {
 
   scoreDisplay.innerText = `Score: ${score}`;
   bestScoreDisplay.innerText = `Best: ${bestScore}`;
-
+  gameOverScreen.style.display = "none";
   createPipe();
 }
 
@@ -175,6 +177,11 @@ function startCountdown() {
 function showReplayOption() {
   replayButton.style.display = "block";
 }
+function showGameOverScreen() {
+  finalScore.innerText = "Score: " + score;
+  finalBestScore.innerText = "Best: " + bestScore;
+  gameOverScreen.style.display = "flex";
+}
 
 // Buttons
 playButton.addEventListener("click", () => {
@@ -182,6 +189,11 @@ playButton.addEventListener("click", () => {
 });
 
 replayButton.addEventListener("click", () => {
+  resetGame();
+});
+
+gameOverReplay.addEventListener("click", () => {
+  gameOverScreen.style.display = "none";
   resetGame();
 });
 

@@ -59,3 +59,57 @@ body {
   color: #fff;
   margin-top: 6px;
 }
+/* GAME OVER OVERLAY */
+.game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.game-over-content {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  width: 280px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  animation: popUp 0.3s ease;
+}
+
+.game-over-content h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.game-over-content button {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin-top: 15px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.game-over-content button:hover {
+  background: #45a049;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popUp {
+  from { transform: scale(0.8); }
+  to { transform: scale(1); }
+}
