@@ -7,6 +7,10 @@ const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
 const bestScoreDisplay = document.getElementById("bestScore");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const finalScore = document.getElementById("finalScore");
+const finalBestScore = document.getElementById("finalBestScore");
+const gameOverReplay = document.getElementById("gameOverReplay");
 
 // Game constants
 const GRAVITY = 0.5;
