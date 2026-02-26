@@ -146,7 +146,7 @@ function prepareGame() {
 
   scoreDisplay.innerText = `Score: ${score}`;
   bestScoreDisplay.innerText = `Best: ${bestScore}`;
-
+  gameOverScreen.style.display = "none";
   createPipe();
 }
 
@@ -177,6 +177,11 @@ function startCountdown() {
 function showReplayOption() {
   replayButton.style.display = "block";
 }
+function showGameOverScreen() {
+  finalScore.innerText = "Score: " + score;
+  finalBestScore.innerText = "Best: " + bestScore;
+  gameOverScreen.style.display = "flex";
+}
 
 // Buttons
 playButton.addEventListener("click", () => {
@@ -184,6 +189,11 @@ playButton.addEventListener("click", () => {
 });
 
 replayButton.addEventListener("click", () => {
+  resetGame();
+});
+
+gameOverReplay.addEventListener("click", () => {
+  gameOverScreen.style.display = "none";
   resetGame();
 });
 
