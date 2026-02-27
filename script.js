@@ -1,4 +1,5 @@
 const canvas = document.getElementById("gameCanvas");
+const loadingScreen = document.getElementById("loadingScreen");
 const ctx = canvas.getContext("2d");
 const playButton = document.getElementById("playButton");
 const replayButton = document.getElementById("replayButton");
