@@ -34,12 +34,18 @@ let isPaused = false;
 let animationId = null;
 let gameStartTime = 0;
 
-// Load best score
+
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
 bird.image.src = "bird.png";
 
+bird.image.onload = () => {
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+    canvas.style.display = "block";
+  }, 1000); 
+};
 // Create pipe
 function createPipe() {
   const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
