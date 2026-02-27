@@ -174,6 +174,10 @@ function gameLoop() {
 function prepareGame() {
   bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
   bird.image.src = "bird.png";
+
+bird.image.onload = () => {
+  loadingScreen.style.display = "none";
+};
   pipes = [];
   score = 0;
   isGameOver = false;
