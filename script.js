@@ -48,13 +48,33 @@ function createPipe() {
 // Draw bird
 function drawBird() {
   ctx.save();
+   
   ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
-  
-  // Rotate based on velocity (max 90 deg down, 20 deg up)
-  const rotation = Math.min(Math.PI / 2, Math.max(-Math.PI / 9, (bird.velocity * 0.1)));
+
+  if (isGameOver) {
+  canvas.style.transform = "translateX(2px)";
+  setTimeout(() => canvas.style.transform = "translateX(-2px)", 50);
+}
+  // Rotate based on velocity
+  const rotation = Math.min(
+    Math.PI / 2,
+    Math.max(-Math.PI / 9, bird.velocity * 0.1)
+  );
   ctx.rotate(rotation);
-  
-  ctx.drawImage(bird.image, -bird.width / 2, -bird.height / 2, bird.width, bird.height);
+
+  // 🔴 Apply red tint if game over
+  if (isGameOver) {
+    ctx.filter = "grayscale(100%) brightness(60%) sepia(100%) hue-rotate(-50deg) saturate(500%)";
+  }
+
+  ctx.drawImage(
+    bird.image,
+    -bird.width / 2,
+    -bird.height / 2,
+    bird.width,
+    bird.height
+  );
+
   ctx.restore();
 }
 
