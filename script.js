@@ -1,4 +1,5 @@
 const canvas = document.getElementById("gameCanvas");
+const loadingScreen = document.getElementById("loadingScreen");
 const ctx = canvas.getContext("2d");
 const playButton = document.getElementById("playButton");
 const replayButton = document.getElementById("replayButton");
@@ -33,12 +34,18 @@ let isPaused = false;
 let animationId = null;
 let gameStartTime = 0;
 
-// Load best score
+
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
 bird.image.src = "bird.png";
 
+bird.image.onload = () => {
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+    canvas.style.display = "block";
+  }, 1000); 
+};
 // Create pipe
 function createPipe() {
   const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
@@ -167,6 +174,10 @@ function gameLoop() {
 function prepareGame() {
   bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
   bird.image.src = "bird.png";
+
+bird.image.onload = () => {
+  loadingScreen.style.display = "none";
+};
   pipes = [];
   score = 0;
   isGameOver = false;
