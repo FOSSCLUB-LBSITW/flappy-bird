@@ -23,7 +23,12 @@ const PIPE_GAP = 200;
 const MIN_PIPE_DISTANCE = 300;
 let currentPipeSpeed = 2;
 const GRACE_PERIOD_MS = 2000;
-const HITBOX_PADDING = 6;
+
+// Offscreen canvas for pixel perfect collision
+const hitCanvas = document.createElement("canvas");
+hitCanvas.width = 50;
+hitCanvas.height = 50;
+const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
 
 // Game variables
 let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
@@ -33,6 +38,9 @@ let isGameOver = false;
 let isPaused = false;
 let animationId = null;
 let gameStartTime = 0;
+let isDebugMode = false;
+let debugHitPixels = [];
+let debugBirdPixels = [];
 
 
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
@@ -98,6 +106,8 @@ function drawPipes() {
 function update() {
   if (isGameOver || isPaused) return;
 
+  debugHitPixels = [];
+  debugBirdPixels = [];
   // Apply grace period gravity reduction
   if (Date.now() - gameStartTime < GRACE_PERIOD_MS) {
     GRAVITY = BASE_GRAVITY * 0.5;
@@ -128,23 +138,94 @@ function update() {
     createPipe();
   }
 
-  pipes.forEach(pipe => {
-    // Hitbox with padding for better "feel"
-    const bx = bird.x + HITBOX_PADDING;
-    const by = bird.y + HITBOX_PADDING;
-    const bw = bird.width - HITBOX_PADDING * 2;
-    const bh = bird.height - HITBOX_PADDING * 2;
+  // Generate bird hit mask for precise collisions in outline and ground checks
+  hitCtx.clearRect(0, 0, 50, 50);
+  hitCtx.save();
+  hitCtx.translate(25, 25);
+  const rotation = Math.min(Math.PI / 2, Math.max(-Math.PI / 9, bird.velocity * 0.1));
+  hitCtx.rotate(rotation);
+  hitCtx.drawImage(bird.image, -25, -25, 50, 50);
+  hitCtx.restore();
 
-    if (
-      bx < pipe.x + PIPE_WIDTH &&
-      bx + bw > pipe.x &&
-      (by < pipe.y - PIPE_GAP || by + bh > pipe.y)
-    ) {
-      isGameOver = true;
+  const imgData = hitCtx.getImageData(0, 0, 50, 50).data;
+  let birdMinY = 50;
+  let birdMaxY = 0;
+
+  for (let i = 0; i < 50; i++) {
+    for (let j = 0; j < 50; j++) {
+      const alpha = imgData[(j * 50 + i) * 4 + 3];
+      if (alpha > 50) {
+        if (j < birdMinY) birdMinY = j;
+        if (j > birdMaxY) birdMaxY = j;
+        
+        if (isDebugMode) {
+          let isOutline = false;
+          if (i === 0 || i === 49 || j === 0 || j === 49) {
+            isOutline = true;
+          } else {
+            const up = imgData[((j - 1) * 50 + i) * 4 + 3];
+            const down = imgData[((j + 1) * 50 + i) * 4 + 3];
+            const left = imgData[(j * 50 + (i - 1)) * 4 + 3];
+            const right = imgData[(j * 50 + (i + 1)) * 4 + 3];
+            if (up <= 50 || down <= 50 || left <= 50 || right <= 50) {
+              isOutline = true;
+            }
+          }
+          if (isOutline) {
+            debugBirdPixels.push({x: bird.x + i, y: bird.y + j});
+          }
+        }
+      }
+    }
+  }
+
+  pipes.forEach(pipe => {
+    // AABB bounds check first
+    const hitTop = (
+      bird.x < pipe.x + PIPE_WIDTH &&
+      bird.x + bird.width > pipe.x &&
+      bird.y < pipe.y - PIPE_GAP
+    );
+    
+    const hitBottom = (
+      bird.x < pipe.x + PIPE_WIDTH &&
+      bird.x + bird.width > pipe.x &&
+      bird.y + bird.height > pipe.y
+    );
+
+    if (hitTop || hitBottom) {
+      let collision = false;
+
+      checkPixels: for (let i = 0; i < 50; i++) {
+        for (let j = 0; j < 50; j++) {
+          const worldX = bird.x + i;
+          const worldY = bird.y + j;
+          
+          const inTopPipe = (worldX >= pipe.x && worldX <= pipe.x + PIPE_WIDTH && worldY <= pipe.y - PIPE_GAP);
+          const inBottomPipe = (worldX >= pipe.x && worldX <= pipe.x + PIPE_WIDTH && worldY >= pipe.y);
+          
+          if (inTopPipe || inBottomPipe) {
+            const alpha = imgData[(j * 50 + i) * 4 + 3];
+            if (alpha > 50) { 
+              collision = true;
+              if (isDebugMode) {
+                debugHitPixels.push({x: worldX, y: worldY});
+              } else {
+                break checkPixels;
+              }
+            }
+          }
+        }
+      }
+
+      if (collision) {
+        isGameOver = true;
+      }
     }
   });
 
-  if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
+  // Precise ground/ceiling collision using pixel outline bounds
+  if (bird.y + birdMaxY >= canvas.height || bird.y + birdMinY <= 0) {
     isGameOver = true;
   }
 }
@@ -154,6 +235,42 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBird();
   drawPipes();
+
+  if (isDebugMode) {
+    // Draw bird accurate pixel outline
+    ctx.fillStyle = "blue";
+    debugBirdPixels.forEach(p => {
+      ctx.fillRect(p.x, p.y, 2, 2);
+    });
+
+    // Draw pipe AABBs
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 1;
+    pipes.forEach(pipe => {
+      ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
+      ctx.strokeRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
+    });
+
+    // Draw Hit Pixels
+    ctx.fillStyle = "yellow";
+    debugHitPixels.forEach(p => {
+      ctx.fillRect(p.x, p.y, 2, 2);
+    });
+
+    // Draw offscreen hitmask
+    ctx.drawImage(hitCanvas, 10, 50);
+    ctx.strokeStyle = "magenta";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(10, 50, 50, 50);
+    ctx.fillStyle = "magenta";
+    ctx.font = "12px Arial";
+    ctx.fillText("Hit Mask", 35, 45);
+    
+    // Draw instructions
+    ctx.textAlign = "right";
+    ctx.fillText("[D] Toggle Debug", canvas.width - 10, 20);
+    ctx.textAlign = "center"; // reset for PAUSED
+  }
 
   // PAUSED OVERLAY
   if (isPaused) {
@@ -282,5 +399,10 @@ window.addEventListener("keydown", event => {
   if (event.code === "KeyP" && !isGameOver) {
     isPaused = !isPaused;
     pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
+  }
+
+  // D toggle debug
+  if (event.code === "KeyD") {
+    isDebugMode = !isDebugMode;
   }
 });
