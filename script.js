@@ -1,4 +1,5 @@
 const canvas = document.getElementById("gameCanvas");
+const loadingScreen = document.getElementById("loadingScreen");
 const ctx = canvas.getContext("2d");
 const playButton = document.getElementById("playButton");
 const replayButton = document.getElementById("replayButton");
@@ -6,29 +7,52 @@ const pauseButton = document.getElementById("pauseButton");
 const countdownDisplay = document.getElementById("countdown");
 const scoreDisplay = document.getElementById("score");
 const instructions = document.getElementById("instructions");
-// Added best score element
 const bestScoreDisplay = document.getElementById("bestScore");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const finalScore = document.getElementById("finalScore");
+const finalBestScore = document.getElementById("finalBestScore");
+const gameOverReplay = document.getElementById("gameOverReplay");
 
 // Game constants
-const GRAVITY = 0.5;
-const FLAP = -10;
+const BASE_GRAVITY = 0.25;
+let GRAVITY = BASE_GRAVITY;
+const FLAP = -5.5;
+const MAX_FALL_SPEED = 7;
 const PIPE_WIDTH = 50;
 const PIPE_GAP = 200;
-const PIPE_SPEED = 2;
+const MIN_PIPE_DISTANCE = 300;
+let currentPipeSpeed = 2;
+const GRACE_PERIOD_MS = 2000;
+const HITBOX_PADDING = 6;
 
 // Game variables
-let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
+let bird = {
+  x: 50,
+  y: 300,
+  width: 50,
+  height: 50,
+  velocity: 0,
+  image: new Image(),
+};
 let pipes = [];
 let score = 0;
 let isGameOver = false;
 let isPaused = false;
 let animationId = null;
+let gameStartTime = 0;
 
 // Load persistent best score
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
 bird.image.src = "bird.png";
+
+bird.image.onload = () => {
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+    canvas.style.display = "block";
+  }, 1000);
+};
 
 // Create pipe
 function createPipe() {
@@ -38,13 +62,43 @@ function createPipe() {
 
 // Draw bird
 function drawBird() {
-  ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
+  ctx.save();
+
+  ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+
+  if (isGameOver) {
+    canvas.style.transform = "translateX(2px)";
+    setTimeout(() => (canvas.style.transform = "translateX(-2px)"), 50);
+  }
+
+  // Rotate based on velocity
+  const rotation = Math.min(
+    Math.PI / 2,
+    Math.max(-Math.PI / 9, bird.velocity * 0.1)
+  );
+  ctx.rotate(rotation);
+
+  // Apply red tint if game over
+  if (isGameOver) {
+    ctx.filter =
+      "grayscale(100%) brightness(60%) sepia(100%) hue-rotate(-50deg) saturate(500%)";
+  }
+
+  ctx.drawImage(
+    bird.image,
+    -bird.width / 2,
+    -bird.height / 2,
+    bird.width,
+    bird.height
+  );
+
+  ctx.restore();
 }
 
 // Draw pipes
 function drawPipes() {
   ctx.fillStyle = "green";
-  pipes.forEach(pipe => {
+  pipes.forEach((pipe) => {
     ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
     ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
   });
@@ -54,25 +108,50 @@ function drawPipes() {
 function update() {
   if (isGameOver || isPaused) return;
 
+  // Apply grace period gravity reduction
+  if (Date.now() - gameStartTime < GRACE_PERIOD_MS) {
+    GRAVITY = BASE_GRAVITY * 0.5;
+  } else {
+    GRAVITY = BASE_GRAVITY;
+  }
+
   bird.velocity += GRAVITY;
+
+  // Terminal velocity
+  if (bird.velocity > MAX_FALL_SPEED) {
+    bird.velocity = MAX_FALL_SPEED;
+  }
+
   bird.y += bird.velocity;
 
-  pipes.forEach(pipe => pipe.x -= PIPE_SPEED);
+  // Move pipes and scale speed with score
+  currentPipeSpeed = 2 + Math.floor(score / 10) * 0.2;
+  pipes.forEach((pipe) => (pipe.x -= currentPipeSpeed));
 
   if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
     score++;
   }
 
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+  // Create pipe with better spacing
+  if (
+    pipes.length === 0 ||
+    pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE
+  ) {
     createPipe();
   }
 
-  pipes.forEach(pipe => {
+  pipes.forEach((pipe) => {
+    // Hitbox with padding for better "feel"
+    const bx = bird.x + HITBOX_PADDING;
+    const by = bird.y + HITBOX_PADDING;
+    const bw = bird.width - HITBOX_PADDING * 2;
+    const bh = bird.height - HITBOX_PADDING * 2;
+
     if (
-      bird.x < pipe.x + PIPE_WIDTH &&
-      bird.x + bird.width > pipe.x &&
-      (bird.y < pipe.y - PIPE_GAP || bird.y + bird.height > pipe.y)
+      bx < pipe.x + PIPE_WIDTH &&
+      bx + bw > pipe.x &&
+      (by < pipe.y - PIPE_GAP || by + bh > pipe.y)
     ) {
       isGameOver = true;
     }
@@ -89,7 +168,7 @@ function draw() {
   drawBird();
   drawPipes();
 
-  // PAUSED OVERLAY
+  // Paused overlay
   if (isPaused) {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -119,18 +198,29 @@ function gameLoop() {
       bestScoreDisplay.innerText = `Best: ${bestScore}`;
     }
     setTimeout(() => {
-      alert("Game Over! Your score: " + score + "
-Best: " + bestScore);
-      showReplayOption();
+      showGameOverScreen();
       pauseButton.style.display = "none";
-    }, 500);
+    }, 300);
   }
 }
 
 // Prepare game state without starting loop (used for countdown)
 function prepareGame() {
-  bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image(), color: "red" };
+  bird = {
+    x: 50,
+    y: 300,
+    width: 50,
+    height: 50,
+    velocity: 0,
+    image: new Image(),
+    color: "red",
+  };
   bird.image.src = "bird.png";
+
+  bird.image.onload = () => {
+    loadingScreen.style.display = "none";
+  };
+
   pipes = [];
   score = 0;
   isGameOver = false;
@@ -142,12 +232,12 @@ function prepareGame() {
   instructions.style.display = "none";
 
   // Show pause button when preparing a new game
-  pauseButton.style.display = "inline-block"; 
-  pauseButton.innerText = "PAUSE"; // reset button text
+  pauseButton.style.display = "inline-block";
+  pauseButton.innerText = "PAUSE";
 
   scoreDisplay.innerText = `Score: ${score}`;
   bestScoreDisplay.innerText = `Best: ${bestScore}`;
-
+  gameOverScreen.style.display = "none";
   createPipe();
 }
 
@@ -158,7 +248,6 @@ function resetGame() {
 }
 
 function startCountdown() {
-  // Prepare game but do not start the loop until countdown finishes
   prepareGame();
 
   let countdown = 3;
@@ -172,6 +261,7 @@ function startCountdown() {
     } else {
       clearInterval(countdownInterval);
       countdownDisplay.style.display = "none";
+      gameStartTime = Date.now();
       gameLoop();
     }
   }, 1000);
@@ -181,7 +271,20 @@ function showReplayOption() {
   replayButton.style.display = "block";
 }
 
-// Buttons
+function showGameOverScreen() {
+  finalScore.innerText = "Score: " + score;
+  finalBestScore.innerText = "Best: " + bestScore;
+  gameOverScreen.style.display = "flex";
+}
+
+// --- Flap helper (shared by all input methods) ---
+function flap() {
+  if (!isGameOver && !isPaused) {
+    bird.velocity = FLAP;
+  }
+}
+
+// --- Button listeners ---
 playButton.addEventListener("click", () => {
   startCountdown();
 });
@@ -190,17 +293,21 @@ replayButton.addEventListener("click", () => {
   resetGame();
 });
 
+gameOverReplay.addEventListener("click", () => {
+  gameOverScreen.style.display = "none";
+  resetGame();
+});
+
 pauseButton.addEventListener("click", () => {
   isPaused = !isPaused;
   pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
 });
 
-// Keyboard controls
-window.addEventListener("keydown", event => {
-
+// --- Keyboard controls ---
+window.addEventListener("keydown", (event) => {
   // Space to flap
-  if (event.code === "Space" && !isGameOver && !isPaused) {
-    bird.velocity = FLAP;
+  if (event.code === "Space") {
+    flap();
   }
 
   // P to pause/resume
@@ -210,26 +317,23 @@ window.addEventListener("keydown", event => {
   }
 });
 
-// --- Added: universal input support (mouse & touch) ---
-function flap() {
-  if (!isGameOver && !isPaused) {
-    bird.velocity = FLAP;
-  }
-}
+// --- Cross-platform input support (mouse & touch) ---
 
-// Mouse: allow click / mousedown anywhere to flap
-window.addEventListener("mousedown", event => {
-  // ignore clicks on UI controls (buttons)
+// Mouse: click / mousedown anywhere to flap (ignore UI buttons)
+window.addEventListener("mousedown", (event) => {
   if (event.target.tagName !== "BUTTON") {
     flap();
   }
 });
 
-// Touch: allow tap anywhere to flap (prevent default to avoid scrolling)
-window.addEventListener("touchstart", event => {
-  // ignore taps on UI controls (buttons)
-  if (event.target.tagName !== "BUTTON") {
-    event.preventDefault();
-    flap();
-  }
-}, { passive: false });
+// Touch: tap anywhere to flap (prevent default to avoid scrolling, ignore UI buttons)
+window.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.target.tagName !== "BUTTON") {
+      event.preventDefault();
+      flap();
+    }
+  },
+  { passive: false }
+);
