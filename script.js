@@ -26,7 +26,14 @@ const GRACE_PERIOD_MS = 2000;
 const HITBOX_PADDING = 6;
 
 // Game variables
-let bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
+let bird = {
+  x: 50,
+  y: 300,
+  width: 50,
+  height: 50,
+  velocity: 0,
+  image: new Image(),
+};
 let pipes = [];
 let score = 0;
 let isGameOver = false;
@@ -34,7 +41,7 @@ let isPaused = false;
 let animationId = null;
 let gameStartTime = 0;
 
-
+// Load persistent best score
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
@@ -44,8 +51,9 @@ bird.image.onload = () => {
   setTimeout(() => {
     loadingScreen.style.display = "none";
     canvas.style.display = "block";
-  }, 1000); 
+  }, 1000);
 };
+
 // Create pipe
 function createPipe() {
   const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
@@ -55,13 +63,14 @@ function createPipe() {
 // Draw bird
 function drawBird() {
   ctx.save();
-   
+
   ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
 
   if (isGameOver) {
-  canvas.style.transform = "translateX(2px)";
-  setTimeout(() => canvas.style.transform = "translateX(-2px)", 50);
-}
+    canvas.style.transform = "translateX(2px)";
+    setTimeout(() => (canvas.style.transform = "translateX(-2px)"), 50);
+  }
+
   // Rotate based on velocity
   const rotation = Math.min(
     Math.PI / 2,
@@ -69,9 +78,10 @@ function drawBird() {
   );
   ctx.rotate(rotation);
 
-  // 🔴 Apply red tint if game over
+  // Apply red tint if game over
   if (isGameOver) {
-    ctx.filter = "grayscale(100%) brightness(60%) sepia(100%) hue-rotate(-50deg) saturate(500%)";
+    ctx.filter =
+      "grayscale(100%) brightness(60%) sepia(100%) hue-rotate(-50deg) saturate(500%)";
   }
 
   ctx.drawImage(
@@ -88,7 +98,7 @@ function drawBird() {
 // Draw pipes
 function drawPipes() {
   ctx.fillStyle = "green";
-  pipes.forEach(pipe => {
+  pipes.forEach((pipe) => {
     ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
     ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
   });
@@ -106,17 +116,17 @@ function update() {
   }
 
   bird.velocity += GRAVITY;
-  
+
   // Terminal velocity
   if (bird.velocity > MAX_FALL_SPEED) {
     bird.velocity = MAX_FALL_SPEED;
   }
-  
+
   bird.y += bird.velocity;
 
   // Move pipes and scale speed with score
   currentPipeSpeed = 2 + Math.floor(score / 10) * 0.2;
-  pipes.forEach(pipe => pipe.x -= currentPipeSpeed);
+  pipes.forEach((pipe) => (pipe.x -= currentPipeSpeed));
 
   if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
@@ -124,11 +134,14 @@ function update() {
   }
 
   // Create pipe with better spacing
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE) {
+  if (
+    pipes.length === 0 ||
+    pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE
+  ) {
     createPipe();
   }
 
-  pipes.forEach(pipe => {
+  pipes.forEach((pipe) => {
     // Hitbox with padding for better "feel"
     const bx = bird.x + HITBOX_PADDING;
     const by = bird.y + HITBOX_PADDING;
@@ -155,7 +168,7 @@ function draw() {
   drawBird();
   drawPipes();
 
-  // PAUSED OVERLAY
+  // Paused overlay
   if (isPaused) {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -178,26 +191,36 @@ function gameLoop() {
   if (!isGameOver) {
     animationId = requestAnimationFrame(gameLoop);
   } else {
+    // Persist best score if beaten, then show results
     if (score > bestScore) {
       bestScore = score;
       localStorage.setItem("bestScore", bestScore);
       bestScoreDisplay.innerText = `Best: ${bestScore}`;
     }
     setTimeout(() => {
-  showGameOverScreen();
-  pauseButton.style.display = "none";
-}, 300);
+      showGameOverScreen();
+      pauseButton.style.display = "none";
+    }, 300);
   }
 }
 
-// Prepare game
+// Prepare game state without starting loop (used for countdown)
 function prepareGame() {
-  bird = { x: 50, y: 300, width: 50, height: 50, velocity: 0, image: new Image() };
+  bird = {
+    x: 50,
+    y: 300,
+    width: 50,
+    height: 50,
+    velocity: 0,
+    image: new Image(),
+    color: "red",
+  };
   bird.image.src = "bird.png";
 
-bird.image.onload = () => {
-  loadingScreen.style.display = "none";
-};
+  bird.image.onload = () => {
+    loadingScreen.style.display = "none";
+  };
+
   pipes = [];
   score = 0;
   isGameOver = false;
@@ -208,6 +231,7 @@ bird.image.onload = () => {
   playButton.style.display = "none";
   instructions.style.display = "none";
 
+  // Show pause button when preparing a new game
   pauseButton.style.display = "inline-block";
   pauseButton.innerText = "PAUSE";
 
@@ -217,6 +241,7 @@ bird.image.onload = () => {
   createPipe();
 }
 
+// Reset game (immediate start, used by Replay)
 function resetGame() {
   prepareGame();
   gameLoop();
@@ -245,13 +270,21 @@ function startCountdown() {
 function showReplayOption() {
   replayButton.style.display = "block";
 }
+
 function showGameOverScreen() {
   finalScore.innerText = "Score: " + score;
   finalBestScore.innerText = "Best: " + bestScore;
   gameOverScreen.style.display = "flex";
 }
 
-// Buttons
+// --- Flap helper (shared by all input methods) ---
+function flap() {
+  if (!isGameOver && !isPaused) {
+    bird.velocity = FLAP;
+  }
+}
+
+// --- Button listeners ---
 playButton.addEventListener("click", () => {
   startCountdown();
 });
@@ -270,12 +303,11 @@ pauseButton.addEventListener("click", () => {
   pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
 });
 
-// Keyboard controls
-window.addEventListener("keydown", event => {
-
+// --- Keyboard controls ---
+window.addEventListener("keydown", (event) => {
   // Space to flap
-  if (event.code === "Space" && !isGameOver && !isPaused) {
-    bird.velocity = FLAP; // Predictable static impulse
+  if (event.code === "Space") {
+    flap();
   }
 
   // P to pause/resume
@@ -284,3 +316,24 @@ window.addEventListener("keydown", event => {
     pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
   }
 });
+
+// --- Cross-platform input support (mouse & touch) ---
+
+// Mouse: click / mousedown anywhere to flap (ignore UI buttons)
+window.addEventListener("mousedown", (event) => {
+  if (event.target.tagName !== "BUTTON") {
+    flap();
+  }
+});
+
+// Touch: tap anywhere to flap (prevent default to avoid scrolling, ignore UI buttons)
+window.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.target.tagName !== "BUTTON") {
+      event.preventDefault();
+      flap();
+    }
+  },
+  { passive: false }
+);
