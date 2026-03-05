@@ -137,11 +137,23 @@ function update() {
   // Move pipes and scale speed with score
   currentPipeSpeed = 2 + Math.floor(score / 10) * 0.2;
   pipes.forEach((pipe) => (pipe.x -= currentPipeSpeed));
+/* ================================
+   ✅ NEW SCORING + CLEANUP LOGIC
+================================ */
+pipes.forEach((pipe, index) => {
 
-  if (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < 0) {
-    pipes.shift();
+  // Score when bird passes pipe
+  if (!pipe.scored && bird.x > pipe.x + PIPE_WIDTH) {
     score++;
+    pipe.scored = true;
   }
+
+  // Remove pipe after it leaves screen
+  if (pipe.x + PIPE_WIDTH < 0) {
+    pipes.splice(index, 1);
+  }
+
+});
 
   // Create pipe with better spacing
   if (
