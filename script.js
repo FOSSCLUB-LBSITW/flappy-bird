@@ -12,6 +12,17 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const finalScore = document.getElementById("finalScore");
 const finalBestScore = document.getElementById("finalBestScore");
 const gameOverReplay = document.getElementById("gameOverReplay");
+const sounds = {
+  flap: new Audio("assets/sounds/flap.mp3"),
+  hit: new Audio("assets/sounds/hit.mp3"),
+  score: new Audio("assets/sounds/score.mp3"),
+  start: new Audio("assets/sounds/start.mp3"),
+  newHigh: new Audio("assets/sounds/newhighscore.mp3")
+};
+function playSound(sound) {
+  sound.currentTime = 0;
+  sound.play().catch(()=>{});
+}
 
 // Game constants
 const BASE_GRAVITY = 0.25;
@@ -146,6 +157,8 @@ pipes.forEach((pipe, index) => {
 if (!pipe.scored && bird.x > pipe.x + PIPE_WIDTH) {
 score++;
 pipe.scored = true;
+playSound(sounds.score);
+
 }
 
 // Remove pipe after it leaves screen
@@ -244,6 +257,7 @@ break checkPixels;
 }
 
 if (collision) {
+playSound(sounds.hit);
 isGameOver = true;
 }
 }
@@ -251,6 +265,7 @@ isGameOver = true;
 
 // Precise ground/ceiling collision using pixel outline bounds
 if (bird.y + birdMaxY >= canvas.height || bird.y + birdMinY <= 0) {
+playSound(sounds.hit);
 isGameOver = true;
 }
 }
@@ -325,6 +340,8 @@ if (score > bestScore) {
 bestScore = score;
 localStorage.setItem("bestScore", bestScore);
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
+playSound(sounds.newHigh);
+
 }
 setTimeout(() => {
 showGameOverScreen();
@@ -391,6 +408,8 @@ countdownDisplay.innerText = countdown;
 clearInterval(countdownInterval);
 countdownDisplay.style.display = "none";
 gameStartTime = Date.now();
+playSound(sounds.start);
+
 gameLoop();
 }
 }, 1000);
@@ -410,6 +429,8 @@ gameOverScreen.style.display = "flex";
 function flap() {
 if (!isGameOver && !isPaused) {
 bird.velocity = FLAP;
+playSound(sounds.flap);
+
 }
 }
 
