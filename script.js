@@ -30,6 +30,26 @@ hitCanvas.width = 50;
 hitCanvas.height = 50;
 const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
 
+/* ================================
+   ADVANCED PARALLAX BACKGROUND
+================================ */
+
+let skyTime = 0;
+
+let clouds = [
+  { x: 50, y: 80, size: 40 },
+  { x: 200, y: 120, size: 35 },
+  { x: 350, y: 60, size: 45 }
+];
+
+let mountains = [
+  { x: 0, height: 180 },
+  { x: 200, height: 150 },
+  { x: 400, height: 170 }
+];
+
+const CLOUD_SPEED = 0.3;
+const MOUNTAIN_SPEED = 0.15;
 // Game variables
 let bird = {
 x: 50,
