@@ -24,7 +24,35 @@ function playSound(sound) {
   sound.play().catch(()=>{});
 }
 
-// Game constants
+/* ===============================
+   BIRD SELECTION SYSTEM
+=================================*/
+
+let selectedBird = "bird.png";
+
+const birdOptions = document.querySelectorAll(".bird-option");
+
+birdOptions.forEach(option => {
+
+option.addEventListener("click", () => {
+
+birdOptions.forEach(o => o.classList.remove("selected"));
+
+option.classList.add("selected");
+
+selectedBird = option.dataset.bird;
+
+bird.image.src = selectedBird;
+
+});
+
+});
+
+
+/* ===============================
+   GAME CONSTANTS
+=================================*/
+
 const BASE_GRAVITY = 0.25;
 let GRAVITY = BASE_GRAVITY;
 const FLAP = -5.5;
@@ -35,13 +63,21 @@ const MIN_PIPE_DISTANCE = 300;
 let currentPipeSpeed = 2;
 const GRACE_PERIOD_MS = 2000;
 
-// Offscreen canvas for pixel perfect collision
+
+/* ===============================
+   HIT CANVAS
+=================================*/
+
 const hitCanvas = document.createElement("canvas");
 hitCanvas.width = 50;
 hitCanvas.height = 50;
 const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
 
-// Game variables
+
+/* ===============================
+   GAME VARIABLES
+=================================*/
+
 let bird = {
 x: 50,
 y: 300,
@@ -50,6 +86,7 @@ height: 50,
 velocity: 0,
 image: new Image(),
 };
+
 let pipes = [];
 let score = 0;
 let isGameOver = false;
@@ -60,11 +97,20 @@ let isDebugMode = false;
 let debugHitPixels = [];
 let debugBirdPixels = [];
 
-// Load persistent best score
+
+/* ===============================
+   BEST SCORE STORAGE
+=================================*/
+
 let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 
-bird.image.src = "bird.png";
+
+/* ===============================
+   LOAD BIRD IMAGE
+=================================*/
+
+bird.image.src = selectedBird;
 
 bird.image.onload = () => {
 setTimeout(() => {
@@ -73,14 +119,23 @@ canvas.style.display = "block";
 }, 1000);
 };
 
-// Create pipe
+
+/* ===============================
+   CREATE PIPE
+=================================*/
+
 function createPipe() {
 const gapY = Math.random() * (canvas.height - PIPE_GAP - 200) + 200;
 pipes.push({ x: canvas.width, y: gapY });
 }
 
-// Draw bird
+
+/* ===============================
+   DRAW BIRD
+=================================*/
+
 function drawBird() {
+
 ctx.save();
 
 ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
@@ -90,14 +145,13 @@ canvas.style.transform = "translateX(2px)";
 setTimeout(() => (canvas.style.transform = "translateX(-2px)"), 50);
 }
 
-// Rotate based on velocity
 const rotation = Math.min(
 Math.PI / 2,
 Math.max(-Math.PI / 9, bird.velocity * 0.1)
 );
+
 ctx.rotate(rotation);
 
-// Apply red tint if game over
 if (isGameOver) {
 ctx.filter =
 "grayscale(100%) brightness(60%) sepia(100%) hue-rotate(-50deg) saturate(500%)";
@@ -112,24 +166,40 @@ bird.height
 );
 
 ctx.restore();
+
 }
 
-// Draw pipes
+
+/* ===============================
+   DRAW PIPES
+=================================*/
+
 function drawPipes() {
+
 ctx.fillStyle = "green";
+
 pipes.forEach((pipe) => {
+
 ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
+
 ctx.fillRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
+
 });
+
 }
 
-// Update logic
+
+/* ===============================
+   UPDATE GAME
+=================================*/
+
 function update() {
+
 if (isGameOver || isPaused) return;
 
 debugHitPixels = [];
 debugBirdPixels = [];
-// Apply grace period gravity reduction
+
 if (Date.now() - gameStartTime < GRACE_PERIOD_MS) {
 GRAVITY = BASE_GRAVITY * 0.5;
 } else {
@@ -138,22 +208,19 @@ GRAVITY = BASE_GRAVITY;
 
 bird.velocity += GRAVITY;
 
-// Terminal velocity
 if (bird.velocity > MAX_FALL_SPEED) {
 bird.velocity = MAX_FALL_SPEED;
 }
 
 bird.y += bird.velocity;
 
-// Move pipes and scale speed with score
 currentPipeSpeed = 2 + Math.floor(score / 10) * 0.2;
+
 pipes.forEach((pipe) => (pipe.x -= currentPipeSpeed));
-/* ================================
-✅ NEW SCORING + CLEANUP LOGIC
-================================ */
+
+
 pipes.forEach((pipe, index) => {
 
-// Score when bird passes pipe
 if (!pipe.scored && bird.x > pipe.x + PIPE_WIDTH) {
 score++;
 pipe.scored = true;
@@ -161,14 +228,13 @@ playSound(sounds.score);
 
 }
 
-// Remove pipe after it leaves screen
 if (pipe.x + PIPE_WIDTH < 0) {
 pipes.splice(index, 1);
 }
 
 });
 
-// Create pipe with better spacing
+
 if (
 pipes.length === 0 ||
 pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE
@@ -176,49 +242,54 @@ pipes[pipes.length - 1].x < canvas.width - MIN_PIPE_DISTANCE
 createPipe();
 }
 
-// Generate bird hit mask for precise collisions in outline and ground checks
+
+/* ===============================
+   HIT MASK
+=================================*/
+
 hitCtx.clearRect(0, 0, 50, 50);
+
 hitCtx.save();
+
 hitCtx.translate(25, 25);
-const rotation = Math.min(Math.PI / 2, Math.max(-Math.PI / 9, bird.velocity * 0.1));
+
+const rotation = Math.min(
+Math.PI / 2,
+Math.max(-Math.PI / 9, bird.velocity * 0.1)
+);
+
 hitCtx.rotate(rotation);
+
 hitCtx.drawImage(bird.image, -25, -25, 50, 50);
+
 hitCtx.restore();
 
 const imgData = hitCtx.getImageData(0, 0, 50, 50).data;
+
 let birdMinY = 50;
 let birdMaxY = 0;
 
 for (let i = 0; i < 50; i++) {
+
 for (let j = 0; j < 50; j++) {
+
 const alpha = imgData[(j * 50 + i) * 4 + 3];
+
 if (alpha > 50) {
+
 if (j < birdMinY) birdMinY = j;
+
 if (j > birdMaxY) birdMaxY = j;
 
-if (isDebugMode) {
-let isOutline = false;
-if (i === 0 || i === 49 || j === 0 || j === 49) {
-isOutline = true;
-} else {
-const up = imgData[((j - 1) * 50 + i) * 4 + 3];
-const down = imgData[((j + 1) * 50 + i) * 4 + 3];
-const left = imgData[(j * 50 + (i - 1)) * 4 + 3];
-const right = imgData[(j * 50 + (i + 1)) * 4 + 3];
-if (up <= 50 || down <= 50 || left <= 50 || right <= 50) {
-isOutline = true;
-}
-}
-if (isOutline) {
-debugBirdPixels.push({x: bird.x + i, y: bird.y + j});
-}
-}
-}
-}
 }
 
+}
+
+}
+
+
 pipes.forEach(pipe => {
-// AABB bounds check first
+
 const hitTop = (
 bird.x < pipe.x + PIPE_WIDTH &&
 bird.x + bird.width > pipe.x &&
@@ -232,263 +303,346 @@ bird.y + bird.height > pipe.y
 );
 
 if (hitTop || hitBottom) {
+
 let collision = false;
 
 checkPixels: for (let i = 0; i < 50; i++) {
+
 for (let j = 0; j < 50; j++) {
+
 const worldX = bird.x + i;
 const worldY = bird.y + j;
 
-const inTopPipe = (worldX >= pipe.x && worldX <= pipe.x + PIPE_WIDTH && worldY <= pipe.y - PIPE_GAP);
-const inBottomPipe = (worldX >= pipe.x && worldX <= pipe.x + PIPE_WIDTH && worldY >= pipe.y);
+const inTopPipe = (
+worldX >= pipe.x &&
+worldX <= pipe.x + PIPE_WIDTH &&
+worldY <= pipe.y - PIPE_GAP
+);
+
+const inBottomPipe = (
+worldX >= pipe.x &&
+worldX <= pipe.x + PIPE_WIDTH &&
+worldY >= pipe.y
+);
 
 if (inTopPipe || inBottomPipe) {
+
 const alpha = imgData[(j * 50 + i) * 4 + 3];
+
 if (alpha > 50) {
+
 collision = true;
-if (isDebugMode) {
-debugHitPixels.push({x: worldX, y: worldY});
-} else {
+
 break checkPixels;
+
 }
+
 }
+
 }
-}
+
 }
 
 if (collision) {
 playSound(sounds.hit);
+
 isGameOver = true;
+
 }
+
 }
+
 });
 
-// Precise ground/ceiling collision using pixel outline bounds
+
 if (bird.y + birdMaxY >= canvas.height || bird.y + birdMinY <= 0) {
 playSound(sounds.hit);
+
 isGameOver = true;
-}
+
 }
 
-// Draw frame
+}
+
+
+/* ===============================
+   DRAW FRAME
+=================================*/
+
 function draw() {
+
 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 drawBird();
+
 drawPipes();
 
-if (isDebugMode) {
-// Draw bird accurate pixel outline
-ctx.fillStyle = "blue";
-debugBirdPixels.forEach(p => {
-ctx.fillRect(p.x, p.y, 2, 2);
-});
-
-// Draw pipe AABBs
-ctx.strokeStyle = "red";
-ctx.lineWidth = 1;
-pipes.forEach(pipe => {
-ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.y - PIPE_GAP);
-ctx.strokeRect(pipe.x, pipe.y, PIPE_WIDTH, canvas.height - pipe.y);
-});
-
-// Draw Hit Pixels
-ctx.fillStyle = "yellow";
-debugHitPixels.forEach(p => {
-ctx.fillRect(p.x, p.y, 2, 2);
-});
-
-// Draw offscreen hitmask
-ctx.drawImage(hitCanvas, 10, 50);
-ctx.strokeStyle = "magenta";
-ctx.lineWidth = 1;
-ctx.strokeRect(10, 50, 50, 50);
-ctx.fillStyle = "magenta";
-ctx.font = "12px Arial";
-ctx.fillText("Hit Mask", 35, 45);
-
-// Draw instructions
-ctx.textAlign = "right";
-ctx.fillText("[D] Toggle Debug", canvas.width - 10, 20);
-ctx.textAlign = "center"; // reset for PAUSED
-}
-
-// PAUSED OVERLAY
 if (isPaused) {
+
 ctx.fillStyle = "rgba(0,0,0,0.5)";
+
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 ctx.fillStyle = "white";
+
 ctx.font = "40px Arial";
+
 ctx.textAlign = "center";
+
 ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
+
 }
 
 scoreDisplay.innerText = `Score: ${score}`;
+
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
+
 }
 
-// Game loop
+
+/* ===============================
+   GAME LOOP
+=================================*/
+
 function gameLoop() {
+
 update();
+
 draw();
 
 if (!isGameOver) {
+
 animationId = requestAnimationFrame(gameLoop);
+
 } else {
-// Persist best score if beaten, then show results
+
 if (score > bestScore) {
+
 bestScore = score;
+
 localStorage.setItem("bestScore", bestScore);
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
 playSound(sounds.newHigh);
 
 }
+
 setTimeout(() => {
+
 showGameOverScreen();
+
 pauseButton.style.display = "none";
+
 }, 300);
-}
+
 }
 
-// Prepare game state without starting loop (used for countdown)
+}
+
+
+/* ===============================
+   PREPARE GAME
+=================================*/
+
 function prepareGame() {
+
 bird = {
+
 x: 50,
 y: 300,
 width: 50,
 height: 50,
 velocity: 0,
-image: new Image(),
-color: "red",
-};
-bird.image.src = "bird.png";
+image: new Image()
 
-bird.image.onload = () => {
-loadingScreen.style.display = "none";
 };
+
+bird.image.src = selectedBird;
 
 pipes = [];
+
 score = 0;
+
 isGameOver = false;
+
 isPaused = false;
 
 canvas.style.display = "block";
+
 replayButton.style.display = "none";
+
 playButton.style.display = "none";
+
 instructions.style.display = "none";
 
-// Show pause button when preparing a new game
 pauseButton.style.display = "inline-block";
+
 pauseButton.innerText = "PAUSE";
 
 scoreDisplay.innerText = `Score: ${score}`;
+
 bestScoreDisplay.innerText = `Best: ${bestScore}`;
+
 gameOverScreen.style.display = "none";
+
 createPipe();
+
 }
 
-// Reset game (immediate start, used by Replay)
-function resetGame() {
-prepareGame();
-gameLoop();
-}
+
+/* ===============================
+   COUNTDOWN START
+=================================*/
 
 function startCountdown() {
+
 prepareGame();
 
 let countdown = 3;
+
 countdownDisplay.style.display = "block";
+
 countdownDisplay.innerText = countdown;
 
 const countdownInterval = setInterval(() => {
+
 countdown--;
+
 if (countdown > 0) {
+
 countdownDisplay.innerText = countdown;
+
 } else {
+
 clearInterval(countdownInterval);
+
 countdownDisplay.style.display = "none";
+
 gameStartTime = Date.now();
 playSound(sounds.start);
 
 gameLoop();
-}
-}, 1000);
+
 }
 
-function showReplayOption() {
-replayButton.style.display = "block";
+}, 1000);
+
 }
+
+
+/* ===============================
+   GAME OVER SCREEN
+=================================*/
 
 function showGameOverScreen() {
+
 finalScore.innerText = "Score: " + score;
+
 finalBestScore.innerText = "Best: " + bestScore;
+
 gameOverScreen.style.display = "flex";
+
 }
 
-// --- Flap helper (shared by all input methods) ---
+
+/* ===============================
+   FLAP
+=================================*/
+
 function flap() {
+
 if (!isGameOver && !isPaused) {
+
 bird.velocity = FLAP;
 playSound(sounds.flap);
 
 }
+
 }
 
-// --- Button listeners ---
-playButton.addEventListener("click", () => {
-startCountdown();
-});
+
+/* ===============================
+   BUTTON EVENTS
+=================================*/
+
+playButton.addEventListener("click", startCountdown);
 
 replayButton.addEventListener("click", () => {
-resetGame();
+
+prepareGame();
+
+gameLoop();
+
 });
 
 gameOverReplay.addEventListener("click", () => {
+
 gameOverScreen.style.display = "none";
-resetGame();
+
+prepareGame();
+
+gameLoop();
+
 });
 
 pauseButton.addEventListener("click", () => {
+
 isPaused = !isPaused;
+
 pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
+
 });
 
-// --- Keyboard controls ---
+
+/* ===============================
+   INPUT CONTROLS
+=================================*/
+
 window.addEventListener("keydown", (event) => {
-// Space to flap
-if (event.code === "Space") {
-flap();
-}
 
-// P to pause/resume
+if (event.code === "Space") flap();
+
 if (event.code === "KeyP" && !isGameOver) {
+
 isPaused = !isPaused;
+
 pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
+
 }
 
-// D toggle debug
 if (event.code === "KeyD") {
+
 isDebugMode = !isDebugMode;
+
 }
+
 });
 
-// --- Cross-platform input support (mouse & touch) ---
 
-// Mouse: click / mousedown anywhere to flap (ignore UI buttons)
 window.addEventListener("mousedown", (event) => {
+
 if (event.target.tagName !== "BUTTON") {
+
 flap();
+
 }
+
 });
 
-// Touch: tap anywhere to flap (prevent default to avoid scrolling, ignore UI buttons)
-window.addEventListener(
-"touchstart",
+
+window.addEventListener("touchstart",
+
 (event) => {
+
 if (event.target.tagName !== "BUTTON") {
+
 event.preventDefault();
+
 flap();
+
 }
+
 },
+
 { passive: false }
+
 );
