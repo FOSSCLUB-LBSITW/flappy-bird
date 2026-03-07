@@ -12,7 +12,13 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const finalScore = document.getElementById("finalScore");
 const finalBestScore = document.getElementById("finalBestScore");
 const gameOverReplay = document.getElementById("gameOverReplay");
+const confettiCanvas = document.getElementById("confettiCanvas");
+const confettiCtx = confettiCanvas.getContext("2d");
 
+confettiCanvas.width = window.innerWidth;
+confettiCanvas.height = window.innerHeight;
+
+let confettiParticles = [];
 /* ===============================
    BIRD SELECTION SYSTEM
 =================================*/
