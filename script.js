@@ -412,6 +412,8 @@ if (score > bestScore) {
 bestScore = score;
 
 localStorage.setItem("bestScore", bestScore);
+// 🎉 NEW HIGH SCORE CONFETTI
+launchConfetti();
 
 }
 
