@@ -579,6 +579,40 @@ pauseButton.innerText = isPaused ? "RESUME" : "PAUSE";
 
 });
 
+function launchConfetti() {
+  confettiParticles = [];
+
+  for (let i = 0; i < 150; i++) {
+    confettiParticles.push({
+      x: Math.random() * confettiCanvas.width,
+      y: Math.random() * -confettiCanvas.height,
+      size: Math.random() * 6 + 4,
+      speed: Math.random() * 3 + 2,
+      angle: Math.random() * Math.PI * 2,
+      color: `hsl(${Math.random() * 360}, 100%, 50%)`
+    });
+  }
+
+  animateConfetti();
+}
+
+function animateConfetti() {
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+  confettiParticles.forEach(p => {
+    p.y += p.speed;
+    p.x += Math.sin(p.angle);
+
+    confettiCtx.fillStyle = p.color;
+    confettiCtx.fillRect(p.x, p.y, p.size, p.size);
+  });
+
+  confettiParticles = confettiParticles.filter(p => p.y < confettiCanvas.height);
+
+  if (confettiParticles.length > 0) {
+    requestAnimationFrame(animateConfetti);
+  }
+}
 
 /* ===============================
    INPUT CONTROLS
