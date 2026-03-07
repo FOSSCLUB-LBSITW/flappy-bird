@@ -68,10 +68,29 @@ hitCanvas.width = 50;
 hitCanvas.height = 50;
 const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
 
+/* ================================
+   ADVANCED PARALLAX BACKGROUND
+
+let skyTime = 0;
+
+let clouds = [
+  { x: 50, y: 80, size: 40 },
+  { x: 200, y: 120, size: 35 },
+  { x: 350, y: 60, size: 45 }
+];
+
+let mountains = [
+  { x: 0, height: 180 },
+  { x: 200, height: 150 },
+  { x: 400, height: 170 }
+];
+
+const CLOUD_SPEED = 0.3;
+const MOUNTAIN_SPEED = 0.15;
+// Game variables
 
 /* ===============================
    GAME VARIABLES
-=================================*/
 
 let bird = {
 x: 50,
@@ -355,6 +374,12 @@ isGameOver = true;
 
 }
 
+// Draw frame
+function draw() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawAdvancedBackground();
+drawBird();
+drawPipes();
 
 /* ===============================
    DRAW FRAME
@@ -547,6 +572,76 @@ bird.velocity = FLAP;
 }
 
 }
+function drawSky() {
+
+  let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+  if (score < 10) {
+    gradient.addColorStop(0, "#87CEEB");
+    gradient.addColorStop(1, "#B0E0E6");
+  }
+  else if (score < 20) {
+    gradient.addColorStop(0, "#FFB347");
+    gradient.addColorStop(1, "#FF7F50");
+  }
+  else {
+    gradient.addColorStop(0, "#0B132B");
+    gradient.addColorStop(1, "#1C2541");
+  }
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+function drawClouds() {
+
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+
+  clouds.forEach(cloud => {
+
+    cloud.x -= CLOUD_SPEED;
+
+    if (cloud.x < -60) {
+      cloud.x = canvas.width + Math.random() * 50;
+      cloud.y = 40 + Math.random() * 120;
+    }
+
+    ctx.beginPath();
+    ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+    ctx.arc(cloud.x + cloud.size * 0.8, cloud.y + 5, cloud.size * 0.7, 0, Math.PI * 2);
+    ctx.arc(cloud.x - cloud.size * 0.8, cloud.y + 5, cloud.size * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+}
+function drawMountains() {
+
+  ctx.fillStyle = "#556B2F";
+
+  mountains.forEach(m => {
+
+    m.x -= MOUNTAIN_SPEED;
+
+    if (m.x < -200) {
+      m.x = canvas.width;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(m.x, canvas.height);
+    ctx.lineTo(m.x + 100, canvas.height - m.height);
+    ctx.lineTo(m.x + 200, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+}
+function drawAdvancedBackground() {
+
+  drawSky();
+  drawClouds();
+  drawMountains();
+
+}
+
 
 
 /* ===============================
